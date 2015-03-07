@@ -1,0 +1,10 @@
+%%-*- erlang -*-
+%% ex: ft=erlang
+{application, erljsonxlsx,
+ [
+  {description, "XLSX to and from JSON"},
+  {vsn, "0.0.1"},
+  {registered, []},
+  {applications, [kernel, stdlib]},
+  {env, []}
+ ]}.
