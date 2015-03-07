@@ -1,2 +1,2 @@
 # erlxlsx
-JSON to and from XLSX
+XLSX to and from JSON
