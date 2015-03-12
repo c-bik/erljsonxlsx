@@ -87,10 +87,23 @@ from_json(Json) when is_map(Json) ->
 -spec from_xlsx(XlsxBin :: binary()) -> {ok, Json :: #{}} | {error, term()}.
 from_xlsx(XlsxBin) when is_binary(XlsxBin) ->
     ZipName = "",
-    {ok, ZipInfo} = zip:foldl(fun(Name, GetInfo, GetBin, Acc) ->
-                      FileInfo = GetInfo(),
-                      [{filename:split(Name), FileInfo, GetBin()} | Acc]
-              end, [], {ZipName, XlsxBin}),
+    {ok, ZipInfo}
+    = zip:foldl(
+        fun(Name, GetInfo, GetBin, Acc) ->
+                FileInfo = GetInfo(),
+                FileContent
+                = case FileInfo#file_info.type of
+                      regular ->
+                          FC = GetBin(),
+                          case binary:match(FC,<<"<?xml ">>) of
+                              nomatch -> FC;
+                              _ -> xmljson:fromxml(FC)
+                          end;
+                      _ ->
+                          GetBin()
+                  end,
+                [{filename:split(Name), FileInfo, FileContent} | Acc]
+        end, [], {ZipName, XlsxBin}),
     {ok, build_map(ZipInfo, #{name => list_to_binary(ZipName),
                               type => <<"zip">>,
                               content => []})}.
@@ -98,17 +111,17 @@ from_xlsx(XlsxBin) when is_binary(XlsxBin) ->
 build_map([], Map) -> Map;
 build_map([Part|Parts], Map) ->
     build_map(Parts, build_map(Part, Map));
-build_map({Name, #file_info{type = Type}, FileBin}, Map) ->
-    add_path(Name, Type, FileBin, Map).
+build_map({Name, #file_info{type = Type}, FileContent}, Map) ->
+    add_path(Name, Type, FileContent, Map).
 
 add_path([], _Type, _FileBin, Map) -> Map;
-add_path([P], regular, FileBin, Map) ->
+add_path([P], regular, FileContent, Map) ->
     maps:update(content, [#{name => list_to_binary(P), type => file,
-                           content => FileBin} | maps:get(content, Map)], Map);
+                           content => FileContent} | maps:get(content, Map)], Map);
 add_path([P], directory, _FileBin, Map) ->
     maps:update(content, [#{name => list_to_binary(P), type => directory,
                            content => []} | maps:get(content, Map)], Map);
-add_path([P|Paths], Type, FileBin, Map) ->
+add_path([P|Paths], Type, FileContent, Map) ->
     MapContents = maps:get(content, Map),
     {SubMap, NewMap}
     = case [M || M <- MapContents, maps:get(name, M) == P] of
@@ -116,5 +129,5 @@ add_path([P|Paths], Type, FileBin, Map) ->
           [] -> {#{name => list_to_binary(P), type => directory,
                    content => []}, Map}
       end,
-    NewSubMap = add_path(Paths, Type, FileBin, SubMap),
+    NewSubMap = add_path(Paths, Type, FileContent, SubMap),
     maps:update(content, [NewSubMap|MapContents], NewMap).
