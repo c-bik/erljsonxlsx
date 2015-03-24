@@ -43,6 +43,7 @@ maprec([{Atm,Int}|_] = PropList) when is_atom(Atm), is_integer(Int) ->
     #{type => taglist,
       value => lists:foldl(fun({A,I}, M) -> maps:put(A,I,M) end, #{}, PropList)
      };
+maprec([{_,V}]) when is_atom(V) -> maprec(V);
 maprec(V) when is_list(V) -> list_to_binary(V);
 maprec(V) when is_atom(V) -> #{type => atom, value => V};
 maprec(R)

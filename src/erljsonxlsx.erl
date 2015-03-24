@@ -80,7 +80,7 @@ template_json() ->
       ]
      }.
 
--spec from_json(Json :: #{}) -> {ok, XlsxBin :: binary()} | {error, term()}.
+-spec from_json(Json :: #{}) -> {ok, #{}} | {error, term()}.
 from_json(Json) when is_map(Json) ->
     {ok, #{}}.
 
