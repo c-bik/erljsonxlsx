@@ -80,7 +80,7 @@ template_json() ->
       ]
      }.
 
--spec from_json(Json :: #{}) -> {ok, XlsxBin :: binary()} | {error, term()}.
+-spec from_json(Json :: #{}) -> {ok, #{}} | {error, term()}.
 from_json(Json) when is_map(Json) ->
     {ok, #{}}.
 
@@ -97,7 +97,7 @@ from_xlsx(XlsxBin) when is_binary(XlsxBin) ->
                           FC = GetBin(),
                           case binary:match(FC,<<"<?xml ">>) of
                               nomatch -> FC;
-                              _ -> xmljson:fromxml(FC)
+                              _ ->  xmljson:fromxml(FC)
                           end;
                       _ ->
                           GetBin()
