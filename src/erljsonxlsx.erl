@@ -97,7 +97,7 @@ from_xlsx(XlsxBin) when is_binary(XlsxBin) ->
                           FC = GetBin(),
                           case binary:match(FC,<<"<?xml ">>) of
                               nomatch -> FC;
-                              _ -> xmljson:fromxml(FC)
+                              _ ->  xmljson:fromxml(FC)
                           end;
                       _ ->
                           GetBin()

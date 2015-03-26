@@ -39,12 +39,24 @@ maprec([R|_] = RecList)
        is_record(R,xmlNsNode); is_record(R,xmlNamespace); is_record(R,xmlDecl);
        is_record(R,xmlPI); is_record(R,xmlElement); is_record(R,xmlDocument) ->
     lists:foldl(fun(Rec, Acc) -> [maprec(Rec)|Acc] end, [], RecList);
-maprec([{Atm,Int}|_] = PropList) when is_atom(Atm), is_integer(Int) ->
+maprec([{Atm,Int}|_] = PropList)  when is_atom(Atm), is_integer(Int)->
     #{type => taglist,
       value => lists:foldl(fun({A,I}, M) -> maps:put(A,I,M) end, #{}, PropList)
      };
-maprec([{_,V}]) when is_atom(V) -> maprec(V);
-maprec(V) when is_list(V) -> list_to_binary(V);
+maprec([{List,Atm}|_] = PropList)  when is_list(List), is_atom(Atm)->
+    #{type => taglist,
+      value => lists:foldl(fun({L,A}, M) -> maps:put(maprec(L),A,M) end, #{}, PropList)
+     };
+maprec([{List1,List2}|_] = PropList)  when is_list(List1), is_list(List2)->
+    #{type => taglist,
+      value => lists:foldl(fun({L1,L2}, M) -> maps:put(maprec(L1),maprec(L2),M) end, #{}, PropList)
+     };
+%nsinfo
+maprec({L1, L2}) when is_list(L1); is_list(L2) ->
+    #{type => taglist,
+      value => maps:put(maprec(L1),maprec(L2),#{})
+     };
+maprec(V) when is_list(V) -> unicode:characters_to_binary(V);
 maprec(V) when is_atom(V) -> #{type => atom, value => V};
 maprec(R)
   when is_record(R,xmlAttribute); is_record(R,xmlText); is_record(R,xmlComment);
